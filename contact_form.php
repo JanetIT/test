@@ -2,11 +2,14 @@
 <html>
 	<head>
 		<title>Contacts</title>
-		<link rel="stylesheet" href="new_style.php">
+		<link rel="stylesheet" href="new_style.css">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
 	<body>
+
 <?php
+require 'connection.php';$conn = Connect();
+
 $name = $tel = $email = $subject = $message = "";
 $nameErr = $telErr = $emailErr = $subjectErr = $messageErr = "";
 
@@ -18,9 +21,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	#nameerr {color: red;} 
 	</style>';
   } else {
-    $name = real_escape_string($_POST['name']);
+    $name = $conn -> real_escape_string($_POST['name']);
 	if (!preg_match("/^[a-zA-Z ]*$/",$name)) {
-      $nameErr = "Only letters and white space allowed";
+      $nameErr = "Only latin letters and white space allowed";
   }
   }
   if (empty($_POST["tel"])) {
@@ -29,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     #telerr {color: red;}
         </style>';
   } else {
-    $tel = test_input($_POST["tel"]);
+    $tel = $conn -> real_escape_string($_POST["tel"]);
 	if (!preg_match("/^[0-9 ]*$/",$tel)) {
       $telErr = "Only numbers and white space allowed";
   }
@@ -40,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     #emailerr {color: red;}
         </style>';
   } else {
-    $email = test_input($_POST["email"]);
+    $email = $conn -> real_escape_string($_POST["email"]);
 	if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $emailErr = "Invalid email format";
   }
@@ -48,34 +51,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
    if (empty($_POST["subject"])) {
     $subject = "";
   } else {
-   $subject = test_input($_POST["subject"]);
+   $subject = $conn -> real_escape_string($_POST["subject"]);
   }
   if (empty($_POST["message"])) {
     $message = "";
   } else {
-    $message = test_input($_POST["message"]);
+    $message = $conn -> real_escape_string($_POST["message"]);
   }
   if ($nameErr != "" || $telErr != "" || $emailErr != "" || $subjectErr != "" || $messageErr != "") {
   	echo '<style>
   	.herror {display:block;}
   	</style>';
   } else {
-  	echo '<style>
+  	$query = "INSERT into dataj (d_name,d_tel,d_email,d_subject,d_message) VALUES('" . $name . "','" . $tel . "','" . $email . "','" . $subject . "','" . $message . "')";
+    $success = $conn -> query($query);
+    if (!$success) {
+	die("Couldn't enter data: " . $conn -> error);
+    } 
+    $conn -> close();
+    $name = $tel = $email = $subject = $message = "";
+    echo '<style>
   	.success {display:block;}
   	</style>';
-  }
+}
 }
 
-function test_input($data) {
-  $data = trim($data);
-  $data = stripslashes($data);
-  $data = htmlspecialchars($data);
-  return $data;
-}
-
-echo $name,$tel,$email,$subject,$message;
 ?>
-		
 		<div id="frame">
 			<div class="herror"> 
 				<h1><strong>There was a problem with your submission.</strong></h1>

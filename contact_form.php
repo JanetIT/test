@@ -13,6 +13,12 @@ require 'connection.php';$conn = Connect();
 $name = $tel = $email = $subject = $message = "";
 $nameErr = $telErr = $emailErr = $subjectErr = $messageErr = "";
 
+ function test_input($data) {
+  $data = trim($data);
+  $data = stripslashes($data);
+  $data = htmlspecialchars($data);
+  return $data;
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
   if (empty($_POST["name"])) {
@@ -21,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	#nameerr {color: red;} 
 	</style>';
   } else {
-    $name = $conn -> real_escape_string($_POST['name']);
+    $name = test_input($_POST["name"]);
 	if (!preg_match("/^[a-zA-Z ]*$/",$name)) {
       $nameErr = "Only latin letters and white space allowed";
   }
@@ -32,7 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     #telerr {color: red;}
         </style>';
   } else {
-    $tel = $conn -> real_escape_string($_POST["tel"]);
+    $tel = test_input($_POST["tel"]);
 	if (!preg_match("/^[0-9 ]*$/",$tel)) {
       $telErr = "Only numbers and white space allowed";
   }
@@ -43,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     #emailerr {color: red;}
         </style>';
   } else {
-    $email = $conn -> real_escape_string($_POST["email"]);
+    $email = test_input($_POST["email"]);
 	if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $emailErr = "Invalid email format";
   }
@@ -51,29 +57,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
    if (empty($_POST["subject"])) {
     $subject = "";
   } else {
-   $subject = $conn -> real_escape_string($_POST["subject"]);
+   $subject = test_input($_POST["subject"]);
   }
   if (empty($_POST["message"])) {
     $message = "";
   } else {
-    $message = $conn -> real_escape_string($_POST["message"]);
+    $message = test_input($_POST["message"]);
   }
   if ($nameErr != "" || $telErr != "" || $emailErr != "" || $subjectErr != "" || $messageErr != "") {
   	echo '<style>
   	.herror {display:block;}
   	</style>';
   } else {
-  	$query = "INSERT into dataj (d_name,d_tel,d_email,d_subject,d_message) VALUES('" . $name . "','" . $tel . "','" . $email . "','" . $subject . "','" . $message . "')";
-    $success = $conn -> query($query);
-    if (!$success) {
-	die("Couldn't enter data: " . $conn -> error);
-    } 
-    $conn -> close();
-    $name = $tel = $email = $subject = $message = "";
+  	$query = $conn->prepare ("INSERT into dataj (d_name,d_tel,d_email,d_subject,d_message) VALUES(?,?,?,?,?)");	
+  		
+  	$query->bind_param("sssss", $name, $tel, $email , $subject, $message);
+	$query->execute();
+    
+    if ($query ->affected_rows > 0){
+  $name = $tel = $email = $subject = $message = "";
     echo '<style>
   	.success {display:block;}
   	</style>';
+} else {
+  echo "Did not enter data";
 }
+  $query -> close();
+  $conn -> close();
+}  
 }
 
 ?>
